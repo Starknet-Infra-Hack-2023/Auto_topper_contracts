@@ -1,7 +1,20 @@
+use starknet::ContractAddress;
+
+#[starknet::interface]
+trait IMockToken<TContractState> {
+    fn mint(ref self: TContractState, recipient: ContractAddress, amount: u256);
+}
+
+mod Error {
+    const TOKEN_MUST_BE_ABOVE_0: felt252 = 'Token amount must not be 0';
+}
+
+
 #[starknet::contract]
 mod MockToken {
     use openzeppelin::token::erc20::ERC20Component;
     use starknet::ContractAddress;
+    use super::Error::TOKEN_MUST_BE_ABOVE_0;
 
     component!(path: ERC20Component, storage: erc20, event: ERC20Event);
 
@@ -35,9 +48,14 @@ mod MockToken {
     }
 
     #[external(v0)]
-    fn mint(ref self: ContractState, recipient: ContractAddress, amount: u256) {
-        // This function is NOT protected which means
-        // ANYONE can mint tokens
-        self.erc20._mint(recipient, amount);
+    impl MockTokenImpl of super::IMockToken<ContractState> {
+        fn mint(ref self: ContractState, recipient: ContractAddress, amount: u256) {
+            // This function is NOT protected which means
+            if (amount <= 0) {
+                panic(array![TOKEN_MUST_BE_ABOVE_0]);
+            }
+            // ANYONE can mint tokens
+            self.erc20._mint(recipient, amount);
+        }
     }
 }
