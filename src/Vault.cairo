@@ -4,35 +4,21 @@ use alexandria_storage::list::{List, ListTrait};
 #[starknet::interface]
 trait IVaultContract<TContractState> {
     fn deposit(ref self: TContractState, token_address: ContractAddress, amount: u256);
-    fn get_funds_customer(ref self: TContractState, token_address: ContractAddress, amount: u256);
     fn withdraw(
         ref self: TContractState,
         token_address: ContractAddress,
-        reciever: ContractAddress,
+        receiver: ContractAddress,
         amount: u256
     );
-}
-
-#[derive(Copy, Drop, starknet::Store, Serde, PartialEq)]
-enum State {
-    PENDING,
-    COMPLETED,
-}
-
-#[derive(Copy, Drop, starknet::Store, Serde, PartialEq)]
-struct CallerQueueStruct {
-    caller: ContractAddress,
-    token_address: ContractAddress,
-    amount: u256,
-    state: State,
+    fn get_funds_customer(ref self: TContractState, token_address: ContractAddress, amount: u256);
 }
 
 #[starknet::contract]
 mod VaultContract {
+    use contracts::SimpleSwap::ISimpleSwapperDispatcherTrait;
     use core::option::OptionTrait;
     use core::serde::Serde;
     use starknet::{ContractAddress, get_caller_address, get_contract_address};
-    use super::{CallerQueueStruct, State};
     use alexandria_storage::list::{List, ListTrait};
     use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
 
@@ -79,14 +65,13 @@ mod VaultContract {
         fn withdraw(
             ref self: ContractState,
             token_address: ContractAddress,
-            reciever: ContractAddress,
+            receiver: ContractAddress,
             amount: u256
         ) {
-            assert_is_allowed_user(ref self);
             let caller = get_caller_address();
             let contract_address = get_contract_address();
-            IERC20Dispatcher { contract_address: token_address }
-                .transfer_from(contract_address, reciever, amount);
+            IERC20Dispatcher { contract_address: token_address }.approve(receiver, amount);
+            IERC20Dispatcher { contract_address: token_address }.transfer(receiver, amount);
         }
 
         fn get_funds_customer(

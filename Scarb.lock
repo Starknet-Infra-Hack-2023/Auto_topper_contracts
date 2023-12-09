@@ -11,9 +11,15 @@ name = "contracts"
 version = "0.1.0"
 dependencies = [
  "alexandria_storage",
+ "ekubo",
  "openzeppelin",
  "snforge_std",
 ]
+
+[[package]]
+name = "ekubo"
+version = "0.1.0"
+source = "git+https://github.com/EkuboProtocol/abis.git#98fa13c4dd8d3fe0ed0a2827813c3047a8bdb5bc"
 
 [[package]]
 name = "openzeppelin"
